@@ -4,11 +4,11 @@
 
 # Site
 title: Hexo
-subtitle: ''
-description: ''
-keywords:
-author: John Doe
-language: en
+subtitle: Siberiawind的博客
+description: 不积跬步，无以至千里
+keywords: Linux,C/C++,图像、视频算法
+author: Siberia怒风
+language: zh-CN
 timezone: ''
 
 # URL
@@ -98,7 +98,7 @@ ignore:
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: landscape
+theme: next
 
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
