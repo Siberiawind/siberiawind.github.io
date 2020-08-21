@@ -105,4 +105,4 @@ theme: next
 deploy:
   type: git
   repo: git@github.com:Siberiawind/siberiawind.github.io.git
-  branch: master
+  branch: source

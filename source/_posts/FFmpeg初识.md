@@ -1,5 +1,5 @@
 ---
-title: FFmpeg初始
+title: FFmpeg初识
 date: 2020-08-21 08:02:26
 tags:
 ---
