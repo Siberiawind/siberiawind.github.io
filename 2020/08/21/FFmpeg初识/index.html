@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="[TOC] 1. 制作ScreenMaps原文地址 文件本身是个容器 不同容器的种类决定了文件内的信息 常见的容器格式有AVI、Quicktime 在一个容器内，我们可以封装很多的流 常见的，我们都会有一个音频流和一个视频流 流内的元素我们称之为序列 每一条流都有其特定的编码格式，对应特定的codec编码解码器 codec决定了实际的数据如何被COded，如何被DECoded，这也是其名字CODE">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FFmpeg初识">
+<meta property="og:url" content="http://yoursite.com/2020/08/21/FFmpeg%E5%88%9D%E8%AF%86/index.html">
+<meta property="og:site_name" content="Siberiawind的博客">
+<meta property="og:description" content="[TOC] 1. 制作ScreenMaps原文地址 文件本身是个容器 不同容器的种类决定了文件内的信息 常见的容器格式有AVI、Quicktime 在一个容器内，我们可以封装很多的流 常见的，我们都会有一个音频流和一个视频流 流内的元素我们称之为序列 每一条流都有其特定的编码格式，对应特定的codec编码解码器 codec决定了实际的数据如何被COded，如何被DECoded，这也是其名字CODE">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-08-21T00:02:26.000Z">
+<meta property="article:modified_time" content="2020-08-22T00:12:56.005Z">
+<meta property="article:author" content="Siberia怒风">
+<meta property="article:tag" content="Linux,C&#x2F;C++,图像、视频算法">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/08/21/FFmpeg%E5%88%9D%E8%AF%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>FFmpeg初识 | Siberiawind的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Siberiawind的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Siberiawind的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">不积跬步，无以至千里</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/Siberiawind/siberiawind.github.io" class="github-corner" title="Siberiawind GitHub" aria-label="Siberiawind GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/08/21/FFmpeg%E5%88%9D%E8%AF%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Siberia怒风">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Siberiawind的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          FFmpeg初识
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-08-21 08:02:26" itemprop="dateCreated datePublished" datetime="2020-08-21T08:02:26+08:00">2020-08-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-08-22 08:12:56" itemprop="dateModified" datetime="2020-08-22T08:12:56+08:00">2020-08-22</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[TOC]</p>
+<h2 id="1-制作ScreenMaps"><a href="#1-制作ScreenMaps" class="headerlink" title="1. 制作ScreenMaps"></a>1. 制作ScreenMaps</h2><p><a target="_blank" rel="noopener" href="http://dranger.com/ffmpeg/tutorial01.html">原文地址</a></p>
+<p>文件本身是个容器</p>
+<p>不同容器的种类决定了文件内的信息</p>
+<p>常见的容器格式有AVI、Quicktime</p>
+<p>在一个容器内，我们可以封装很多的流</p>
+<p>常见的，我们都会有一个音频流和一个视频流</p>
+<p>流内的元素我们称之为序列</p>
+<p>每一条流都有其特定的编码格式，对应特定的codec编码解码器</p>
+<p>codec决定了实际的数据如何被COded，如何被DECoded，这也是其名字CODEC的由来</p>
+<p>常见的codec有DivX以及MP3</p>
+<p>包Packets 是每次从流中读取得到的数据块，其内包含有我们最终需要输入应用中的信息</p>
+<p>常见的视频流处理流程：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">1. 从video.avi容器内打开video视频流</span><br><span class="line">2. 从video视频流中源源不断的读取packet到frame内</span><br><span class="line">3. 如果frame是不完整的，那么继续回到2</span><br><span class="line">4. 对frame进行相应的处理</span><br><span class="line">5. 返回2</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;libavcodec/avcodec.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;libavformat/avformat.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;ffmpeg/swscale.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    av_register_all();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>av_register_all()将会在程序运行时对所有可用的codec以及format进行登记，一般来说，没有必要指定登记某一种codec或者format，且由于只需要登记一次，<br>我们也只需要在main()函数中调用一次即可</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">AVFormatContext* pFormatCtx = <span class="literal">NULL</span>;</span><br><span class="line"><span class="comment">// Open Video file</span></span><br><span class="line"><span class="keyword">if</span>(avformat_open_input(&amp;pFormatCtx, argv[<span class="number">1</span>], <span class="literal">NULL</span>, <span class="number">0</span>, <span class="literal">NULL</span>)!=<span class="number">0</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>; <span class="comment">// Return -1 if open input failed</span></span><br></pre></td></tr></table></figure>
+<p>avformat_open_input()函数将读取文件的头，并在AVFormatContext结构体变量pFormatCtx中存储相应的文件信息，其后三个参数分别对应的是 文件格式，缓冲<br>区大小以及格式选项，分别设置为NULL或者0可以令libavformat库自动检测这些</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// retrieve stream information</span></span><br><span class="line"><span class="keyword">if</span>(avformat_find_stream_info(pFormatCtx, <span class="literal">NULL</span>) &lt; <span class="number">0</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>; <span class="comment">// Return -1 if find stream information failed</span></span><br></pre></td></tr></table></figure>
+<p>avformat_find_stream_info()函数将检查pFormatCtx变量内的流信息</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// dump infomation about file onto standard error</span></span><br><span class="line">av_dump_format(pFormatCtx, <span class="number">0</span>, argv[<span class="number">1</span>], <span class="number">0</span>);</span><br></pre></td></tr></table></figure>
+<p>pFormatCtx-&gt;streams只是一个指针数组，其大小为pFormatCtx-&gt;nb_streams，遍历该指针数组直到我们找到一个videoStream<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> i;</span><br><span class="line">AVCodecContext* pCodecCtxOrig = <span class="literal">NULL</span>;</span><br><span class="line">AVCodecContext* pCodecCtx = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Find the first video stream</span></span><br><span class="line"><span class="keyword">int</span> videoStream = <span class="number">-1</span>;</span><br><span class="line"><span class="keyword">for</span>(i=<span class="number">0</span>; i &lt; pFormatCtx-&gt;nb_streams; i++)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span>(pFormatCtx-&gt;streams[i]-&gt;codec-&gt;codec_type == AVMEDIA_TYPE_VIDEO)</span><br><span class="line">    &#123;</span><br><span class="line">        videoStream = i;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span>(videoStream == <span class="number">-1</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>; <span class="comment">// Failed to find a video stream</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// get a pointer to the codec context for the video stream</span></span><br><span class="line">pCodecCtx = pFormatCtx-&gt;streams[videoStream]-&gt;codec;</span><br></pre></td></tr></table></figure></p>
+<p>流内有关codec编解码器的信息我们称之为’codec context’编解码上下文，它包含了当前流使用的codec所有的信息，然后我们用一个指针指向它</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">AVCodec* pCodec = <span class="literal">NULL</span>;</span><br><span class="line"><span class="comment">// Find the decoder for the video stream</span></span><br><span class="line">pCodec = avcodec_find_decoder(pCodecCtx-&gt;codec_id);</span><br><span class="line"><span class="keyword">if</span>(pCodec == <span class="literal">NULL</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Unsupported codec!\n&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Copy Context</span></span><br><span class="line">pCodecCtx = avcodec_alloc_context3(pCodec);</span><br><span class="line"><span class="comment">// avcodec_copy_context(target, src)，因为不能直接使用视频流内的codec上下文，我们需要将其拷贝出来到我们刚初始化的pCodecCtx 这个codec上下文中</span></span><br><span class="line"><span class="keyword">if</span>(avcodec_copy_context(pCodecCtx, pCodecCtxOrig)!=<span class="number">0</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Couldn&#x27;t copy codec context&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>;  <span class="comment">// Error while copying codec context</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Open codec</span></span><br><span class="line"><span class="keyword">if</span>(avcodec_open2(pCodecCtx, pCodec) &lt; <span class="number">0</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们再定义一段内存用来存放packet流内的frame信息</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">AVFrame* pFrame = <span class="literal">NULL</span>;</span><br><span class="line"><span class="comment">// Allocate video frame;</span></span><br><span class="line">pFrame = av_frame_alloc();</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Allocate an AVFrame structure</span></span><br><span class="line">pFrameRGB = av_frame_alloc();</span><br><span class="line"><span class="keyword">if</span>(pFrameRGB == <span class="literal">NULL</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">uint8_t</span> *<span class="built_in">buffer</span> = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> numBytes;</span><br><span class="line"><span class="comment">// Determine required buffer size and allocate buffer</span></span><br><span class="line"><span class="comment">// 24 bits(3 bytes) x width x height</span></span><br><span class="line">numBytes = avpicture_get_size(PIX_FMT_RGB24, pCodecCtx-&gt;<span class="built_in">width</span>, pCodecCtx-&gt;<span class="built_in">height</span>);</span><br><span class="line"></span><br><span class="line"><span class="built_in">buffer</span> = (<span class="keyword">uint8_t</span>*)av_malloc(numBytes * <span class="keyword">sizeof</span>(<span class="keyword">uint8_t</span>));</span><br></pre></td></tr></table></figure>
+<p>此处的av_malloc是原malloc的一个简单包装器，它只能确保内存地址是对齐的，但它仍无法防止一些内存泄露，double free以及其它的malloc常见问题</p>
+<p>接下来要用avpicture_fill来将帧填充到新分配的缓冲区中，AVPicture是AVFrame结构体的子集</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Assign appropriate parts of buffer to image planesin pFrameRGB</span></span><br><span class="line"><span class="comment">// Note that pFrameRGB is an AVFrame, but AVFrame is a superset of AVPicture</span></span><br><span class="line">avpicture_fill((AVPicture *) pFrameRGB, <span class="built_in">buffer</span>, PIX_FMT_RGB24, pCodecCtx-&gt;<span class="built_in">width</span>, pCodecCtx-&gt;<span class="built_in">height</span>);</span><br></pre></td></tr></table></figure>
+<p><strong>读取数据</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SwsContext</span> *<span class="title">sws_ctx</span> = <span class="title">NULL</span>;</span></span><br><span class="line"><span class="keyword">int</span> frameFinished;</span><br><span class="line">AVPacket packet;</span><br><span class="line"><span class="comment">// initialize SWS context for software scaling</span></span><br><span class="line">sws_ctx = sws_getContext(pCodecCtx-&gt;<span class="built_in">width</span>,</span><br><span class="line">                                pCodecCtx-&gt;<span class="built_in">height</span>,</span><br><span class="line">                                pCodecCtx-&gt;pix_fmt,</span><br><span class="line">                                pCodecCtx-&gt;weight,</span><br><span class="line">                                pCodecCtx-&gt;<span class="built_in">height</span>,</span><br><span class="line">                                PIX_FMT_RGB24,</span><br><span class="line">                                SWS_BILINEAR,</span><br><span class="line">                                <span class="literal">NULL</span>,</span><br><span class="line">                                <span class="literal">NULL</span>,</span><br><span class="line">                                <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">i=<span class="number">0</span>;</span><br><span class="line"><span class="keyword">while</span>(av_read_frame(pFormatCtx, &amp;packet) &gt;= <span class="number">0</span>)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 判定该packet是否是video stream的packet</span></span><br><span class="line">    <span class="keyword">if</span>(packet.stream_index == videoStream)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// Decode video frame</span></span><br><span class="line">        avcodec_decode_video2(pCodecCtx, pFrame, &amp;frameFinished, &amp;packet);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Did we get a video frame?</span></span><br><span class="line">        <span class="keyword">if</span>(frameFinished)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// Convert the image from its native format to RGB</span></span><br><span class="line">            sws_scale(sws_ctx, (<span class="keyword">uint8_t</span> <span class="keyword">const</span> * <span class="keyword">const</span> *)pFrame-&gt;data, pFrame-&gt;linesize, <span class="number">0</span>, pCodecCtx-&gt;<span class="built_in">height</span>, pFrameRGB-&gt;data, pFrameRGB-&gt;linesize);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// save the frame to disk</span></span><br><span class="line">            <span class="keyword">if</span>(++i &lt;= <span class="number">5</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                SaveFrame(pFrameRGB, pCodecCtx-&gt;<span class="built_in">width</span>, pCodecCtx-&gt;<span class="built_in">height</span>, i);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Free the packet that was allocated by av_read_frame</span></span><br><span class="line">    av_free_packet(&amp;packet);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>SaveFrame()函数是我们定义的图像写入函数，下面将帧写入到ppm文件中，有关ppm格式的相关介绍可参考:arrow_right:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">SaveFrame</span><span class="params">(AVFrame *pFrame, <span class="keyword">int</span> <span class="built_in">width</span>, <span class="keyword">int</span> <span class="built_in">height</span>, <span class="keyword">int</span> iFrame)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    FILE *pFile;</span><br><span class="line">    <span class="keyword">char</span> szFileName[<span class="number">32</span>];</span><br><span class="line">    <span class="keyword">int</span> y;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Open file</span></span><br><span class="line">    <span class="built_in">sprintf</span>(szFileName, <span class="string">&quot;frame%d.ppm&quot;</span>, iFrame);</span><br><span class="line">    pFile = fopen(szFileName, <span class="string">&quot;wb&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span>(pFile == <span class="literal">NULL</span>)</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// write header</span></span><br><span class="line">    <span class="built_in">fprintf</span>(pFile, <span class="string">&quot;P6\n%d %d\n255\n&quot;</span>, <span class="built_in">width</span>, <span class="built_in">height</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// write pixel data</span></span><br><span class="line">    <span class="keyword">for</span>(y=<span class="number">0</span>; y&lt;<span class="built_in">height</span>; y++)</span><br><span class="line">    &#123;</span><br><span class="line">        fwrite(pFrame-&gt;data[<span class="number">0</span>] + y*pFrame-&gt;linesize[<span class="number">0</span>], <span class="number">1</span>, <span class="built_in">width</span>*<span class="number">3</span>, pFile);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// close file</span></span><br><span class="line">    fclose(pFile);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>PPM图像就是一个将原有RGB信息以字符串形式平铺开来的文件，其头文件会包含图像的宽和高大小，以及RGB值的最大值。当完成video stream的读取操作后，清<br>除everything</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Free the RGB image</span></span><br><span class="line">av_free(<span class="built_in">buffer</span>);</span><br><span class="line">av_free(pFrameRGB);</span><br><span class="line"><span class="comment">// Free the YUV frame</span></span><br><span class="line">av_free(pFrame);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Close the codecs</span></span><br><span class="line">avcodec_close(pCodecCtx);</span><br><span class="line">avcodec_close(pCodecCtxOrig);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Close the video file</span></span><br><span class="line">avformat_close_input(&amp;pFormatCtx);</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+<p>下面，上gcc编译命令:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc tutorial1.c -o tutorial -lavutil -lavformat -lavcodec -lz -lm</span><br></pre></td></tr></table></figure>
+<h2 id="2-投影到屏幕上-Output-to-the-screen"><a href="#2-投影到屏幕上-Output-to-the-screen" class="headerlink" title="2. 投影到屏幕上 Output to the screen"></a>2. 投影到屏幕上 Output to the screen</h2><p>为了将pixel绘制(draw)到屏幕上，我们需要用到SDL库（现在用的是SDL2.0库）</p>
+<p>SDL就是Simple Direct Layer，是一个跨平台的多媒体库</p>
+<p>YUV是一种存储raw image数据的方式，Y是brightness亮度组件，U和V是颜色组件。SDL库中有一种叫做YUV overlay的方法可以将movies放映到screen上，该方法<br>仅需输入YUV data作为raw数组即可display它，它接受4种YUV形式，其中YV12是最快的，YUV420P与YV12速度差不多，只是U和V的顺序被替换了。YUV420P中420指<br>代下采样的比例是4:2:0</p>
+<p>首先，我们需要初始化SDL，SDL_Init()函数会告诉函数库将会使用哪些特性:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER))</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Could not initialize SDL - %s\n&quot;</span>, SDL_GetError());</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后，我们需要在屏幕上定义一块区域来放置我们的stuff，SDL1.0库中用的是SDL_Surface，SDL2.0库中用的是SDL_Window：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">SDL_Window *screen;</span><br><span class="line">screen = SDL_CreateWindow(<span class="string">&quot;FFmpeg play&quot;</span>,</span><br><span class="line">                                    SDL_WINDOWPOS_UNDEFINED,</span><br><span class="line">                                    SDL_WINDOWPOS_UNDEFINED,</span><br><span class="line">                                    pCodecCtx-&gt;width,</span><br><span class="line">                                    pCodecCtx-&gt;height,</span><br><span class="line">                                    <span class="number">0</span>);</span><br><span class="line"><span class="keyword">if</span>(!screen)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;SDL: Could not create window!\n&quot;</span>);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2020/08/22/c%E7%9A%84%E7%BC%96%E8%AF%91%E8%BF%87%E7%A8%8B%E9%93%BE/" rel="next" title="c的编译过程链">
+      c的编译过程链 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%88%B6%E4%BD%9CScreenMaps"><span class="nav-number">1.</span> <span class="nav-text">1. 制作ScreenMaps</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%8A%95%E5%BD%B1%E5%88%B0%E5%B1%8F%E5%B9%95%E4%B8%8A-Output-to-the-screen"><span class="nav-number">2.</span> <span class="nav-text">2. 投影到屏幕上 Output to the screen</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Siberia怒风</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Siberia怒风</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/pjax/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/pangu@4/dist/browser/pangu.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+  
+
+    </div>
+</body>
+</html>
